@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Lambda CloudFormation Generator</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">AWS Lambda CloudFormation Generator</h1>
+                <p class="lead">Create a CloudFormation template for an AWS Lambda function with daily scheduling</p>
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Lambda Function Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="cfnForm" action="{{ url_for('generate') }}" method="post" class="needs-validation" novalidate>
+                            <!-- Lambda Configuration Section -->
+                            <div class="mb-4">
+                                <h6 class="mb-3">Lambda Function Details</h6>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="lambda_name" class="form-label">Lambda Function Name</label>
+                                        <input type="text" class="form-control" id="lambda_name" name="lambda_name" 
+                                               placeholder="MyLambdaFunction" value="MyLambdaFunction" required
+                                               pattern="[a-zA-Z0-9_-]+" maxlength="64">
+                                        <div class="invalid-feedback">
+                                            Please provide a valid Lambda function name (alphanumeric, hyphens, underscores).
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="lambda_description" class="form-label">Description</label>
+                                        <input type="text" class="form-control" id="lambda_description" name="lambda_description" 
+                                               placeholder="Lambda function created by CloudFormation" 
+                                               value="Lambda function created by CloudFormation">
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="lambda_runtime" class="form-label">Runtime</label>
+                                        <select class="form-select" id="lambda_runtime" name="lambda_runtime" required>
+                                            <option value="python3.9" selected>Python 3.9</option>
+                                            <option value="python3.8">Python 3.8</option>
+                                            <option value="python3.10">Python 3.10</option>
+                                            <option value="python3.11">Python 3.11</option>
+                                            <option value="nodejs14.x">Node.js 14.x</option>
+                                            <option value="nodejs16.x">Node.js 16.x</option>
+                                            <option value="nodejs18.x">Node.js 18.x</option>
+                                            <option value="java11">Java 11</option>
+                                            <option value="java17">Java 17</option>
+                                            <option value="go1.x">Go 1.x</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label for="lambda_handler" class="form-label">Handler</label>
+                                        <input type="text" class="form-control" id="lambda_handler" name="lambda_handler" 
+                                               placeholder="index.handler" value="index.handler" required>
+                                        <div class="invalid-feedback">
+                                            Please provide a Lambda handler (file.function_name).
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label for="lambda_timeout" class="form-label">Timeout (seconds)</label>
+                                        <input type="number" class="form-control" id="lambda_timeout" name="lambda_timeout" 
+                                               min="1" max="900" value="60" required>
+                                        <div class="invalid-feedback">
+                                            Timeout must be between 1 and 900 seconds.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="lambda_memory" class="form-label">Memory (MB)</label>
+                                        <input type="number" class="form-control" id="lambda_memory" name="lambda_memory" 
+                                               min="128" max="10240" step="64" value="128" required>
+                                        <div class="invalid-feedback">
+                                            Memory must be between 128 and 10240 MB.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <label for="custom_code" class="form-label">Custom Lambda Code <small class="text-muted">(Optional)</small></label>
+                                        <textarea class="form-control font-monospace" id="custom_code" name="custom_code" 
+                                                  rows="10" placeholder="Enter your custom Lambda function code here..."></textarea>
+                                        <div class="form-text">
+                                            If left empty, a default code template will be generated based on your selected runtime.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- IAM Role and Policy Configuration -->
+                            <div class="mb-4">
+                                <h6 class="mb-3">IAM Role and Policy Configuration</h6>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="custom_role_name" class="form-label">Custom IAM Role Name <small class="text-muted">(Optional)</small></label>
+                                        <input type="text" class="form-control" id="custom_role_name" name="custom_role_name" 
+                                               placeholder="my-custom-role-name">
+                                        <div class="form-text">
+                                            If left empty, a role name will be generated based on your Lambda function name.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <label for="custom_iam_policy" class="form-label">Custom IAM Policy <small class="text-muted">(Optional - JSON format)</small></label>
+                                        <textarea class="form-control font-monospace" id="custom_iam_policy" name="custom_iam_policy" 
+                                                  rows="10" placeholder='Enter custom IAM policy in JSON format, e.g., {"Version": "2012-10-17", "Statement": [...]}'></textarea>
+                                        <div class="form-text">
+                                            If left empty, a default policy with permissions for CloudWatch logs and X-Ray will be used.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Schedule Configuration Section -->
+                            <div class="mb-4">
+                                <h6 class="mb-3">Schedule Configuration</h6>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="schedule_hour" class="form-label">Hour (0-23)</label>
+                                        <input type="number" class="form-control" id="schedule_hour" name="schedule_hour" 
+                                               min="0" max="23" value="8" required>
+                                        <div class="invalid-feedback">
+                                            Hour must be between 0 and 23.
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="schedule_minute" class="form-label">Minute (0-59)</label>
+                                        <input type="number" class="form-control" id="schedule_minute" name="schedule_minute" 
+                                               min="0" max="59" value="0" required>
+                                        <div class="invalid-feedback">
+                                            Minute must be between 0 and 59.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> The Lambda function will be scheduled to run daily at 
+                                    <strong><span id="scheduleTime">8:00</span> AM</strong>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">Generate CloudFormation Template</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">API Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>You can also generate the CloudFormation template programmatically using the API endpoint:</p>
+                        <pre><code>POST /api/generate
+Content-Type: application/json
+
+{
+    "lambda_name": "MyLambdaFunction",
+    "lambda_description": "Lambda function created by CloudFormation",
+    "lambda_runtime": "python3.9",
+    "lambda_handler": "index.handler",
+    "lambda_timeout": 60,
+    "lambda_memory": 128,
+    "schedule_hour": 8,
+    "schedule_minute": 0,
+    
+    // Optional parameters
+    "custom_code": "def handler(event, context):\n    return {'statusCode': 200, 'body': 'Hello from Lambda!'}",
+    "custom_iam_policy": {"Version": "2012-10-17", "Statement": [...]},
+    "custom_role_name": "my-custom-lambda-role"
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer mt-auto py-3 bg-body-tertiary">
+        <div class="container text-center">
+            <span class="text-muted">AWS CloudFormation Generator for Lambda Functions &copy; 2023</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudFormation Template - {{ lambda_name }}</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Generated Template</li>
+                    </ol>
+                </nav>
+                
+                <h1 class="mb-4">Generated CloudFormation Template</h1>
+                <p class="lead">CloudFormation template for Lambda function <strong>{{ lambda_name }}</strong> with daily schedule</p>
+                
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">CloudFormation YAML</h5>
+                        <button class="btn btn-sm btn-primary" id="copyBtn" onclick="copyToClipboard()">Copy to Clipboard</button>
+                    </div>
+                    <div class="card-body">
+                        <pre id="yamlContent" class="yaml-content"><code>{{ template }}</code></pre>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Deployment Instructions</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Option 1: AWS Console</h6>
+                        <ol>
+                            <li>Log in to the AWS Management Console.</li>
+                            <li>Navigate to the CloudFormation service.</li>
+                            <li>Click "Create stack" → "With new resources (standard)".</li>
+                            <li>Select "Template is ready" and "Upload a template file".</li>
+                            <li>Save the YAML content above to a file and upload it.</li>
+                            <li>Follow the wizard to complete the stack creation.</li>
+                        </ol>
+                        
+                        <h6>Option 2: AWS CLI</h6>
+                        <ol>
+                            <li>Save the YAML content to a file, e.g., <code>lambda-template.yaml</code></li>
+                            <li>Run the following AWS CLI command:</li>
+                            <pre><code>aws cloudformation create-stack \
+    --stack-name {{ lambda_name }}-Stack \
+    --template-body file://lambda-template.yaml \
+    --capabilities CAPABILITY_NAMED_IAM</code></pre>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">Create Another Template</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer mt-auto py-3 bg-body-tertiary">
+        <div class="container text-center">
+            <span class="text-muted">AWS CloudFormation Generator for Lambda Functions &copy; 2023</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard() {
+            const textarea = document.createElement('textarea');
+            textarea.value = document.getElementById('yamlContent').textContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            // Change button text temporarily
+            const copyBtn = document.getElementById('copyBtn');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.remove('btn-primary');
+            copyBtn.classList.add('btn-success');
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.classList.remove('btn-success');
+                copyBtn.classList.add('btn-primary');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
